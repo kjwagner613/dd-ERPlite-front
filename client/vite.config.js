@@ -18,7 +18,7 @@ export default defineConfig({
   },
   server: {
     proxy: {
-      "/api": "http://localhost:4000",
+      "/api": "https://dd-erp-lite-15e687b08cf1.herokuapp.com/",
     },
   },
 });
