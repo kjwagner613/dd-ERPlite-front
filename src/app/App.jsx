@@ -1,6 +1,8 @@
 import { useState } from "react";
 import Customers from "../modules/sd/customers";
 import SalesOrders from "../modules/sd/sales-orders";
+import Products from "../modules/sd/products";
+import PriceList from "../modules/sd/price-list";
 
 const modules = [
   {
@@ -73,10 +75,32 @@ export default function App() {
               >
                 Sales Orders
               </button>
+              <button
+                type="button"
+                className={sdSection === "products" ? "active" : ""}
+                onClick={() => setSdSection("products")}
+              >
+                Products
+              </button>
+              <button
+                type="button"
+                className={sdSection === "prices" ? "active" : ""}
+                onClick={() => setSdSection("prices")}
+              >
+                Price List
+              </button>
             </div>
           </div>
           <div className="module-body">
-            {sdSection === "customers" ? <Customers /> : <SalesOrders />}
+            {sdSection === "customers" ? (
+              <Customers />
+            ) : sdSection === "sales" ? (
+              <SalesOrders />
+            ) : sdSection === "products" ? (
+              <Products />
+            ) : (
+              <PriceList />
+            )}
           </div>
         </section>
       );

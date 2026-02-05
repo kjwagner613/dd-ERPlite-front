@@ -3,7 +3,7 @@ import TwoPane from "../../../layout/TwoPane/TwoPane";
 import CustomerList from "./CustomerList";
 import CustomerDetail from "./CustomerDetail";
 import CustomerForm from "./CustomerForm";
-import { getCustomers } from "../../../api/sd.api";
+import { getCustomers, createCustomer, updateCustomer } from "../../../api/sd.api";
 
 export default function Customers() {
   const [customers, setCustomers] = useState([]);
@@ -31,17 +31,14 @@ export default function Customers() {
   }
 
   async function saveCustomer(payload) {
-    // TODO: call your API (create/update)
-    // const saved = mode === "new" ? await createCustomer(payload) : await updateCustomer(selectedId, payload);
-
-    // For now: optimistic local update example:
     if (mode === "new") {
-      const temp = { ...payload, _id: crypto.randomUUID() };
-      setCustomers(prev => [temp, ...prev]);
-      setSelectedId(temp._id);
+      const created = await createCustomer(payload);
+      setCustomers(prev => [created, ...prev]);
+      setSelectedId(created._id);
     } else {
+      const updated = await updateCustomer(selectedId, { ...selectedCustomer, ...payload });
       setCustomers(prev =>
-        prev.map(c => (c._id === selectedId ? { ...c, ...payload } : c))
+        prev.map(c => (c._id === selectedId ? updated : c))
       );
     }
     setMode("view");

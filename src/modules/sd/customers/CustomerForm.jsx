@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 const FIELDS = [
   { key: "name", label: "Name", type: "text", autoComplete: "name" },
   { key: "company", label: "Company", type: "text", autoComplete: "organization" },
+  { key: "slaDays", label: "SLA Days", type: "number", autoComplete: "off" },
   { key: "email", label: "Email", type: "email", autoComplete: "email" },
   { key: "phone", label: "Phone", type: "tel", autoComplete: "tel" },
   { key: "address", label: "Address", type: "text", autoComplete: "street-address" },
@@ -14,7 +15,13 @@ const FIELDS = [
 
 function buildForm(initialValues = {}) {
   const out = {};
-  for (const f of FIELDS) out[f.key] = initialValues[f.key] ?? "";
+  for (const f of FIELDS) {
+    if (f.key === "slaDays") {
+      out[f.key] = initialValues[f.key] ?? 15;
+    } else {
+      out[f.key] = initialValues[f.key] ?? "";
+    }
+  }
   return out;
 }
 

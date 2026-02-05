@@ -1,6 +1,95 @@
+import mongoose from "mongoose";
+import dotenv from "dotenv";
+
+dotenv.config({ path: new URL("./.env", import.meta.url).pathname });
+dotenv.config();
+
+const MONGODB_URI = process.env.MONGODB_URI || process.env.MONGO_URI;
+
+if (!MONGODB_URI) {
+  console.error("Missing MONGODB_URI. Set it in server/.env");
+  process.exit(1);
+}
+
+const customerSchema = new mongoose.Schema(
+  {
+    name: String,
+    company: String,
+    email: String,
+    phone: String,
+    address: String,
+    city: String,
+    state: String,
+    zip: String,
+    country: String,
+    slaDays: { type: Number, default: 15 },
+    salesOrderCount: { type: Number, default: 0 },
+    invoiceCount: { type: Number, default: 0 },
+    activity: [{ timestamp: String, text: String }],
+  },
+  { timestamps: true }
+);
+
+const productSchema = new mongoose.Schema(
+  {
+    productId: { type: String, unique: true },
+    name: String,
+    category: String,
+    modifiers: [String],
+    onHand: { type: Number, default: 0 },
+  },
+  { timestamps: true }
+);
+
+const priceSchema = new mongoose.Schema(
+  {
+    productId: { type: String, index: true },
+    price: Number,
+    validFrom: String,
+    validTo: String,
+  },
+  { timestamps: true }
+);
+
+const salesOrderSchema = new mongoose.Schema(
+  {
+    number: Number,
+    customerId: String,
+    customerName: String,
+    status: String,
+    orderDate: String,
+    softShipDate: String,
+    slaDays: { type: Number, default: 15 },
+    remarks: String,
+    inventoryConfirmed: { type: Boolean, default: false },
+    total: { type: Number, default: 0 },
+    items: [
+      {
+        id: String,
+        productId: String,
+        materialName: String,
+        qty: Number,
+        price: Number,
+        remark: String,
+        inventoryVerified: Boolean,
+        priceOverride: Boolean,
+      },
+    ],
+    invoiceId: Number,
+    productionOrderId: Number,
+    timeCount: Number,
+    activity: [{ timestamp: String, text: String }],
+  },
+  { timestamps: true }
+);
+
+const Customer = mongoose.model("Customer", customerSchema);
+const Product = mongoose.model("Product", productSchema);
+const Price = mongoose.model("Price", priceSchema);
+const SalesOrder = mongoose.model("SalesOrder", salesOrderSchema);
+
 const customers = [
   {
-    _id: "cust-1001",
     name: "Olivia Chen",
     company: "Northwind Outfitters",
     email: "olivia.chen@northwind.example",
@@ -19,7 +108,6 @@ const customers = [
     ],
   },
   {
-    _id: "cust-1002",
     name: "Marcus Hale",
     company: "Summit Ridge Co.",
     email: "mhale@summitridge.example",
@@ -38,7 +126,6 @@ const customers = [
     ],
   },
   {
-    _id: "cust-1003",
     name: "Priya Natarajan",
     company: "Eastwood Labs",
     email: "priya.n@eastwood.example",
@@ -58,7 +145,6 @@ const customers = [
     ],
   },
   {
-    _id: "cust-1004",
     name: "Diego Alvarez",
     company: "Redwood Industrial",
     email: "dalvarez@redwood.example",
@@ -74,7 +160,6 @@ const customers = [
     activity: [{ timestamp: "2026-02-02 14:10", text: "Requested product samples." }],
   },
   {
-    _id: "cust-1005",
     name: "Hannah Lee",
     company: "Bluewater Foods",
     email: "hlee@bluewater.example",
@@ -150,21 +235,19 @@ const priceList = [
 
 const salesOrders = [
   {
-    _id: "so-1024",
     number: 1024,
-    orderDate: "2026-01-30",
-    customerId: "cust-1001",
     customerName: "Northwind Outfitters",
     status: "FULFILLED",
-    total: 1240,
-    items: [
-      { id: "itm-1", productId: "00001", materialName: "Travel Bag", qty: 40, price: 22, remark: "Saint logo placement" },
-      { id: "itm-2", productId: "00002", materialName: "Coffee Mug", qty: 20, price: 18, remark: "Thermal finish" },
-    ],
-    remarks: "Delivered to main warehouse dock 3.",
+    orderDate: "2026-01-30",
     softShipDate: "2026-02-03",
     slaDays: 15,
+    remarks: "Delivered to main warehouse dock 3.",
     inventoryConfirmed: true,
+    total: 1240,
+    items: [
+      { id: "itm-1", productId: "00001", materialName: "Travel Bag", qty: 40, price: 22, remark: "Saint logo placement", inventoryVerified: true },
+      { id: "itm-2", productId: "00002", materialName: "Coffee Mug", qty: 20, price: 18, remark: "Thermal finish", inventoryVerified: true },
+    ],
     invoiceId: 845,
     productionOrderId: 2203,
     timeCount: 6,
@@ -174,21 +257,19 @@ const salesOrders = [
     ],
   },
   {
-    _id: "so-1027",
     number: 1027,
-    orderDate: "2026-02-01",
-    customerId: "cust-1002",
     customerName: "Summit Ridge Co.",
     status: "SUBMITTED",
-    total: 2250,
-    items: [
-      { id: "itm-3", productId: "00003", materialName: "Coffee Mug", qty: 60, price: 15, remark: "Saying: Summit Strong" },
-      { id: "itm-4", productId: "00005", materialName: "Luggage Cart", qty: 30, price: 45, remark: "Steel frame" },
-    ],
-    remarks: "Customer requested staged delivery.",
+    orderDate: "2026-02-01",
     softShipDate: "2026-02-08",
     slaDays: 15,
+    remarks: "Customer requested staged delivery.",
     inventoryConfirmed: true,
+    total: 2250,
+    items: [
+      { id: "itm-3", productId: "00003", materialName: "Coffee Mug", qty: 60, price: 15, remark: "Saying: Summit Strong", inventoryVerified: true },
+      { id: "itm-4", productId: "00005", materialName: "Luggage Cart", qty: 30, price: 45, remark: "Steel frame", inventoryVerified: true },
+    ],
     invoiceId: null,
     productionOrderId: 2211,
     timeCount: 2,
@@ -197,169 +278,91 @@ const salesOrders = [
     ],
   },
   {
-    _id: "so-1031",
     number: 1031,
-    orderDate: "2026-01-25",
-    customerId: "cust-1005",
     customerName: "Bluewater Foods",
     status: "FULFILLED",
-    total: 930,
-    items: [
-      { id: "itm-5", productId: "00004", materialName: "Coffee Mug", qty: 12, price: 55, remark: "Logo imprint" },
-      { id: "itm-6", productId: "00002", materialName: "Coffee Mug", qty: 15, price: 18, remark: "Thermal lid" },
-    ],
-    remarks: "Delivered early per customer request.",
+    orderDate: "2026-01-25",
     softShipDate: "2026-01-31",
     slaDays: 20,
+    remarks: "Delivered early per customer request.",
     inventoryConfirmed: true,
+    total: 930,
+    items: [
+      { id: "itm-5", productId: "00004", materialName: "Coffee Mug", qty: 12, price: 55, remark: "Logo imprint", inventoryVerified: true },
+      { id: "itm-6", productId: "00002", materialName: "Coffee Mug", qty: 15, price: 18, remark: "Thermal lid", inventoryVerified: true },
+    ],
     invoiceId: 861,
     productionOrderId: null,
     timeCount: 4,
-    activity: [
-      { timestamp: "2026-02-01 12:05", text: "Invoice paid." },
-    ],
+    activity: [{ timestamp: "2026-02-01 12:05", text: "Invoice paid." }],
   },
   {
-    _id: "so-1033",
     number: 1033,
-    orderDate: "2026-02-02",
-    customerId: "cust-1003",
     customerName: "Eastwood Labs",
     status: "QUOTE",
-    total: 2100,
-    items: [
-      { id: "itm-7", productId: "00001", materialName: "Travel Bag", qty: 10, price: 22, remark: "Standard logo" },
-      { id: "itm-8", productId: "00006", materialName: "Luggage Cart", qty: 8, price: 235, remark: "Plastic wheels" },
-    ],
-    remarks: "Awaiting approval from procurement.",
+    orderDate: "2026-02-02",
     softShipDate: "",
     slaDays: 12,
+    remarks: "Awaiting approval from procurement.",
     inventoryConfirmed: false,
+    total: 2100,
+    items: [
+      { id: "itm-7", productId: "00001", materialName: "Travel Bag", qty: 10, price: 22, remark: "Standard logo", inventoryVerified: false },
+      { id: "itm-8", productId: "00006", materialName: "Luggage Cart", qty: 8, price: 235, remark: "Plastic wheels", inventoryVerified: false },
+    ],
     invoiceId: null,
     productionOrderId: null,
     timeCount: 0,
-    activity: [
-      { timestamp: "2026-02-03 08:20", text: "Quote sent to customer." },
-    ],
+    activity: [{ timestamp: "2026-02-03 08:20", text: "Quote sent to customer." }],
   },
   {
-    _id: "so-1035",
     number: 1035,
-    orderDate: "2026-02-04",
-    customerId: "cust-1004",
     customerName: "Redwood Industrial",
     status: "DRAFT",
-    total: 0,
-    items: [],
-    remarks: "",
+    orderDate: "2026-02-04",
     softShipDate: "",
     slaDays: 15,
+    remarks: "",
     inventoryConfirmed: false,
+    total: 0,
+    items: [],
     invoiceId: null,
     productionOrderId: null,
     timeCount: 0,
-    activity: [
-      { timestamp: "2026-02-04 10:15", text: "Draft created for review." },
-    ],
+    activity: [{ timestamp: "2026-02-04 10:15", text: "Draft created for review." }],
   },
 ];
 
-const USE_API = true;
+async function seed() {
+  await mongoose.connect(MONGODB_URI);
 
-async function fetchJson(url, options) {
-  const res = await fetch(url, options);
-  if (!res.ok) throw new Error(`Request failed: ${res.status}`);
-  return res.json();
+  await Promise.all([
+    Customer.deleteMany({}),
+    Product.deleteMany({}),
+    Price.deleteMany({}),
+    SalesOrder.deleteMany({}),
+  ]);
+
+  const createdCustomers = await Customer.insertMany(customers);
+  await Product.insertMany(products);
+  await Price.insertMany(priceList);
+
+  const customerByCompany = new Map(
+    createdCustomers.map((c) => [c.company, c._id.toString()])
+  );
+
+  const ordersWithCustomerIds = salesOrders.map((order) => ({
+    ...order,
+    customerId: customerByCompany.get(order.customerName) || "",
+  }));
+
+  await SalesOrder.insertMany(ordersWithCustomerIds);
+
+  console.log("Seed complete");
+  await mongoose.disconnect();
 }
 
-export function getCustomers() {
-  if (!USE_API) return Promise.resolve(customers);
-  return fetchJson("/api/customers");
-}
-
-export function getSalesOrders() {
-  if (!USE_API) return Promise.resolve(salesOrders);
-  return fetchJson("/api/sales-orders");
-}
-
-export function getProducts() {
-  if (!USE_API) return Promise.resolve(products);
-  return fetchJson("/api/products");
-}
-
-export function getPriceList() {
-  if (!USE_API) return Promise.resolve(priceList);
-  return fetchJson("/api/prices");
-}
-
-export function createSalesOrder(payload) {
-  return fetchJson("/api/sales-orders", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
-  });
-}
-
-export function updateSalesOrder(id, payload) {
-  return fetchJson(`/api/sales-orders/${id}`, {
-    method: "PUT",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
-  });
-}
-
-export function createCustomer(payload) {
-  return fetchJson("/api/customers", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
-  });
-}
-
-export function updateCustomer(id, payload) {
-  return fetchJson(`/api/customers/${id}`, {
-    method: "PUT",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
-  });
-}
-
-export function createProduct(payload) {
-  return fetchJson("/api/products", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
-  });
-}
-
-export function updateProduct(id, payload) {
-  return fetchJson(`/api/products/${id}`, {
-    method: "PUT",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
-  });
-}
-
-export function deleteProduct(id) {
-  return fetchJson(`/api/products/${id}`, { method: "DELETE" });
-}
-
-export function createPrice(payload) {
-  return fetchJson("/api/prices", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
-  });
-}
-
-export function updatePrice(id, payload) {
-  return fetchJson(`/api/prices/${id}`, {
-    method: "PUT",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
-  });
-}
-
-export function deletePrice(id) {
-  return fetchJson(`/api/prices/${id}`, { method: "DELETE" });
-}
+seed().catch((err) => {
+  console.error(err);
+  process.exit(1);
+});

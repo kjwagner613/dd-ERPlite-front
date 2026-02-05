@@ -7,8 +7,29 @@ function safeLower(v) {
 function normalizeStatus(s) {
   const val = (s ?? "").toString().toUpperCase();
   // optional: define an ordering for statuses
-  const rank = { QUOTE: 0, OPEN: 1, DELIVERED: 2, CLOSED: 3 };
+  const rank = { DRAFT: 0, QUOTE: 1, SUBMITTED: 2, FULFILLED: 3 };
   return { val, rank: rank[val] ?? 999 };
+}
+
+function parseTimestamp(ts) {
+  if (!ts) return null;
+  const normalized = ts.toString().replace(" ", "T");
+  const d = new Date(normalized);
+  return Number.isNaN(d.getTime()) ? null : d;
+}
+
+function getLastActivityDate(order) {
+  const activity = order?.activity || [];
+  const dates = activity.map((a) => parseTimestamp(a.timestamp)).filter(Boolean);
+  if (dates.length) return new Date(Math.max(...dates.map((d) => d.getTime())));
+  if (order?.orderDate) return parseTimestamp(`${order.orderDate}T12:00:00`);
+  return null;
+}
+
+function daysSince(date) {
+  if (!date) return 0;
+  const diff = Date.now() - date.getTime();
+  return Math.floor(diff / (1000 * 60 * 60 * 24));
 }
 
 export default function SalesOrderList({ orders = [], selectedId, onSelect }) {
@@ -144,8 +165,13 @@ export default function SalesOrderList({ orders = [], selectedId, onSelect }) {
             >
               <div className="title">Order #{order.number}</div>
               <div className="subtitle">{order.customerName}</div>
-              <div className={`pill status-${safeLower(order.status)}`}>
-                {order.status}
+              <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                <div className={`pill status-${safeLower(order.status)}`}>
+                  {order.status}
+                </div>
+                {order.status !== "FULFILLED" && daysSince(getLastActivityDate(order)) > 3 && (
+                  <div className="pill risk-pill">At Risk</div>
+                )}
               </div>
             </li>
           ))
