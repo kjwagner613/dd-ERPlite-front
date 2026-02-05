@@ -265,9 +265,16 @@ const salesOrders = [
 ];
 
 const USE_API = true;
+const API_BASE = (import.meta.env.VITE_API_URL || "").replace(/\/$/, "");
+
+function buildUrl(path) {
+  if (/^https?:\/\//i.test(path)) return path;
+  if (!API_BASE) return path;
+  return `${API_BASE}${path.startsWith("/") ? path : `/${path}`}`;
+}
 
 async function fetchJson(url, options) {
-  const res = await fetch(url, options);
+  const res = await fetch(buildUrl(url), options);
   if (!res.ok) throw new Error(`Request failed: ${res.status}`);
   return res.json();
 }
